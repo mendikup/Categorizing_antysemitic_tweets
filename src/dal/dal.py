@@ -14,4 +14,4 @@ class Dal:
 
     def dump_json(self, data):
         with open(self.json_path ,"w" ,encoding="utf-8") as file:
-            json.dump(file,data)
+            json.dump(data,file, indent= 4)
