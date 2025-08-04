@@ -3,19 +3,53 @@ import pandas as pd
 class DataAnalyzer:
 
     def analyze(self, df):
-        statistic = {}
-        return statistic
+        statistics = {
+            "total_tweets": self.count_tweets_per_category(df),
+            "average_words_in_tweet": self.average_words_per_tweet(df),
+            "longest_3_tweets": self.find_the_3_longest_tweets_per_category(df)
+
+        }
+        return statistics
+
+    def count_tweets_per_category(self, df):
+        total = len(df)
+        value_counts = df["Biased"].value_counts().to_dict()
+        return {
+            "total": total,
+            "not_antisemitic": value_counts[0],
+            "antisemitic": value_counts[1]
+        }
+
+    def average_words_per_tweet(self, df):
+        not_antisemitic_mask = df["Biased"] == 0
+        antisemitic_mask = df["Biased"] == 1
+
+        not_antisemitic_avg = df[not_antisemitic_mask]["Text"].apply(lambda x: len(str(x).split())).mean()
+        antisemitic_avg = df[antisemitic_mask]["Text"].apply(lambda x: len(str(x).split())).mean()
+
+        return {
+            "not_antisemitic": round(not_antisemitic_avg, 2) if not_antisemitic_avg is not None else 0,
+            "antisemitic": round(antisemitic_avg, 2) if antisemitic_avg is not None else 0
+        }
 
 
-    def count_tweets_per_category(self):
-        return
+    def find_the_3_longest_tweets_per_category(self, df):
+        longest_3_tweets_per_category = {"antisemitic":[],"not_antisemitic":[]}
+        not_antisemitic_mask = df["Biased"] == 0
+        antisemitic_mask = df["Biased"] == 1
 
-    def calculate_the_average_words_in_tweet(self):
-        return
+        # Calculate word lengths and sort per not_antisemitic tweets
+        df["word_length"] = df[not_antisemitic_mask]["Text"].str.len()
+        sorted_df = df.sort_values(by=["word_length"], ascending=False)
+        the_longest_3_words = sorted_df["Text"].head(3).to_string(index=False)
+        longest_3_tweets_per_category["antisemitic"].append(the_longest_3_words)
 
-    def find_the_3_longest_tweets_per_category(self):
-        the_longest_3_tweets_per_category = {"antisemitic":[],"not_antisemitic":[]}
-        return the_longest_3_tweets_per_category
+        # Calculate word lengths and sort per antisemitic tweets
+        df["word_length"] = df[antisemitic_mask]["Text"].str.len()
+        sorted_df = df.sort_values(by=["word_length"], ascending=False)
+        the_longest_3_words = sorted_df["Text"].head(3).to_string(index=False)
+        longest_3_tweets_per_category["not_antisemitic"].append(the_longest_3_words)
+        return longest_3_tweets_per_category
 
     def find_the_10_most_common_words_in_all_categories(self):
         common_words_in_all_categories = {"common_words":[]}
