@@ -7,9 +7,10 @@ class DataAnalyzer:
             "total_tweets": self.count_tweets_per_category(df),
             "average_words_in_tweet": self.average_words_per_tweet(df),
             "longest_3_tweets": self.find_the_3_longest_tweets_per_category(df),
-            "common_words": self.find_the_10_most_common_words_in_all_categories(df)
-
+            "common_words": self.find_the_10_most_common_words_in_all_categories(df),
+            "uppercase_words": self.find_the_number_of_words_in_uppercase(df)
         }
+
         return statistics
 
     def count_tweets_per_category(self, df):
@@ -52,6 +53,7 @@ class DataAnalyzer:
         longest_3_tweets_per_category["not_antisemitic"].append(the_longest_3_words)
         return longest_3_tweets_per_category
 
+
     def find_the_10_most_common_words_in_all_categories(self, df):
         seperate_words = df["Text"].sum().split()
         seperate_words = pd.Series(seperate_words)
@@ -59,7 +61,29 @@ class DataAnalyzer:
         common_words = count_words.head(10).index.to_list()
         return common_words
 
-    def find_the_number_of_words_in_uppercase(self):
-        number_of_words_in_uppercase = {"uppercase_words":[]}
+    def find_the_number_of_words_in_uppercase(self ,df: pd.DataFrame):
+        number_of_words_in_uppercase = {}
+        total = 0
+        not_antisemitic_mask = df["Biased"] == 0
+        df = df[not_antisemitic_mask]
+        sum_of_uppercase =df["Text"].apply(lambda x:sum(1 for word in x.split() if word.isupper())).sum()
+        total +=sum_of_uppercase
+        number_of_words_in_uppercase ["nut_antisemitic"] = sum_of_uppercase
+
+
+        #count for antisemitic
+        antisemitic_mask = df["Biased"] == 1
+        df =df[antisemitic_mask]
+        sum_of_uppercase = df["Text"].apply(lambda x: sum(1 for word in x.split() if word.isupper())).sum()
+        number_of_words_in_uppercase["antisemitic"] = sum_of_uppercase
+        total += sum_of_uppercase
+
+        number_of_words_in_uppercase["total"] = total
+
+
+
         return number_of_words_in_uppercase
+
+
+
 
