@@ -6,14 +6,15 @@ class DataAnalyzer:
         statistics = {
             "total_tweets": self.count_tweets_per_category(df),
             "average_words_in_tweet": self.average_words_per_tweet(df),
-            "longest_3_tweets": self.find_the_3_longest_tweets_per_category(df)
+            "longest_3_tweets": self.find_the_3_longest_tweets_per_category(df),
+            "common_words": self.find_the_10_most_common_words_in_all_categories(df)
 
         }
         return statistics
 
     def count_tweets_per_category(self, df):
         total = len(df)
-        value_counts = df["Biased"].value_counts().to_dict()
+        value_counts = df["Biased"].value_counts().to_list()
         return {
             "total": total,
             "not_antisemitic": value_counts[0],
@@ -51,9 +52,12 @@ class DataAnalyzer:
         longest_3_tweets_per_category["not_antisemitic"].append(the_longest_3_words)
         return longest_3_tweets_per_category
 
-    def find_the_10_most_common_words_in_all_categories(self):
-        common_words_in_all_categories = {"common_words":[]}
-        return common_words_in_all_categories
+    def find_the_10_most_common_words_in_all_categories(self, df):
+        seperate_words = df["Text"].sum().split()
+        seperate_words = pd.Series(seperate_words)
+        count_words = seperate_words.value_counts()
+        common_words = count_words.head(10).index.to_list()
+        return common_words
 
     def find_the_number_of_words_in_uppercase(self):
         number_of_words_in_uppercase = {"uppercase_words":[]}
