@@ -1,0 +1,23 @@
+import pandas as pd
+from src.dal.dal import Dal
+from src.utils.data_cleaner import DataCleaner
+from src.core.data_analyzer import DataAnalyzer
+
+class Manager:
+    dal =Dal()
+    data_cleaner = DataCleaner()
+    data_analyzer = DataAnalyzer()
+
+
+    def __init__(self):
+        self.cleaned_data = None
+        self.statistic = None
+
+
+    def run(self):
+        data = self.dal.load_data()
+        self.cleaned_data = self.data_cleaner.clean_data(data)
+        self.statistic = self.data_analyzer.analyze(data)
+
+
+
