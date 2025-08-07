@@ -19,8 +19,8 @@ class Manager:
         data = self.dal.load_data()
         self.cleaned_data = self.data_cleaner.clean_data(data)
         self.statistic = self.data_analyzer.analyze(data)
-        print(convert_numpy_types(self.statistic))
         self.dal.dump_json(convert_numpy_types(self.statistic))
+        self.dal.dump_cleaned_csv(self.cleaned_data)
 
 
 

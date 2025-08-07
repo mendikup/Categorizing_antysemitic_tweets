@@ -1,89 +1,67 @@
+from collections import Counter
+
 import pandas as pd
 
 class DataAnalyzer:
 
     def analyze(self, df):
+        antisemitic_mask = df["Biased"] == 1
+        non_antisemitic_mask = df["Biased"] == 0
+
         statistics = {
             "total_tweets": self.count_tweets_per_category(df),
-            "average_words_in_tweet": self.average_words_per_tweet(df),
-            "longest_3_tweets": self.find_the_3_longest_tweets_per_category(df),
-            "common_words": self.find_the_10_most_common_words_in_all_categories(df),
-            "uppercase_words": self.find_the_number_of_words_in_uppercase(df)
+            "average_words_in_tweet": self.average_words_per_tweet(df,antisemitic_mask, non_antisemitic_mask),
+            "3 longest_tweets": self.find_3_longest_tweets(df, antisemitic_mask, non_antisemitic_mask),
+            "common_words": self.find_most_common_words(df),
+            "uppercase_words": self.count_uppercase_words(df,antisemitic_mask, non_antisemitic_mask)
         }
 
         return statistics
 
-    def count_tweets_per_category(self, df):
-        total = len(df)
-        value_counts = df["Biased"].value_counts().to_list()
+    def count_tweets_per_category(self, df: pd.DataFrame):
+        counts = df["Biased"].value_counts()
         return {
-            "total": total,
-            "not_antisemitic": value_counts[0],
-            "antisemitic": value_counts[1]
+            "antisemitic": int(counts.get(1, 0)),
+            "non_antisemitic": int(counts.get(0, 0)),
+            "total": len(df),
         }
 
-    def average_words_per_tweet(self, df):
-        not_antisemitic_mask = df["Biased"] == 0
-        antisemitic_mask = df["Biased"] == 1
-
-        not_antisemitic_avg = df[not_antisemitic_mask]["Text"].apply(lambda x: len(str(x).split())).mean()
-        antisemitic_avg = df[antisemitic_mask]["Text"].apply(lambda x: len(str(x).split())).mean()
-
+    def average_words_per_tweet(self, df: pd.DataFrame, antisemitic_mask, non_antisemitic_mask):
         return {
-            "not_antisemitic": round(not_antisemitic_avg, 2) if not_antisemitic_avg is not None else 0,
-            "antisemitic": round(antisemitic_avg, 2) if antisemitic_avg is not None else 0
+            "antisemitic": self._average_words(df[antisemitic_mask]),
+            "non_antisemitic": self._average_words(df[non_antisemitic_mask]),
+            "total": self._average_words(df)
         }
 
 
-    def find_the_3_longest_tweets_per_category(self, df):
-        longest_3_tweets_per_category = {"antisemitic":[],"not_antisemitic":[]}
-        not_antisemitic_mask = df["Biased"] == 0
-        antisemitic_mask = df["Biased"] == 1
+    def _average_words(self, df: pd.DataFrame):
+        return round(df["Text"].apply(lambda x: len(str(x).split())).mean() or 0, 2)
 
-        # Calculate word lengths and sort per not_antisemitic tweets
-        df["word_length"] = df[not_antisemitic_mask]["Text"].str.len()
-        sorted_df = df.sort_values(by=["word_length"], ascending=False)
-        the_longest_3_words = sorted_df["Text"].head(3).to_string(index=False)
-        longest_3_tweets_per_category["antisemitic"].append(the_longest_3_words)
+    def find_3_longest_tweets(self, df: pd.DataFrame, antisemitic_mask, non_antisemitic_mask):
+        return {
+            "antisemitic": self._top_n_longest_tweets(df[antisemitic_mask], n=3),
+            "non_antisemitic": self._top_n_longest_tweets(df[non_antisemitic_mask], n=3)
+        }
 
-        # Calculate word lengths and sort per antisemitic tweets
-        df["word_length"] = df[antisemitic_mask]["Text"].str.len()
-        sorted_df = df.sort_values(by=["word_length"], ascending=False)
-        the_longest_3_words = sorted_df["Text"].head(3).to_string(index=False)
-        longest_3_tweets_per_category["not_antisemitic"].append(the_longest_3_words)
-        return longest_3_tweets_per_category
+    def _top_n_longest_tweets(self, df: pd.DataFrame, n=3):
+        df = df.copy()
+        df["text_length"] = df["Text"].astype(str).str.len()
+        return df.sort_values(by="text_length", ascending=False)["Text"].head(n).tolist()
 
+    def find_most_common_words(self, df: pd.DataFrame, n=10):
+        words = " ".join(df["Text"].astype(str)).split()
+        most_common = Counter(words).most_common(n)
+        return [word for word, _ in most_common]
 
-    def find_the_10_most_common_words_in_all_categories(self, df):
-        seperate_words = df["Text"].sum().split()
-        seperate_words = pd.Series(seperate_words)
-        count_words = seperate_words.value_counts()
-        common_words = count_words.head(10).index.to_list()
-        return common_words
+    def count_uppercase_words(self, df: pd.DataFrame, antisemitic_mask, non_antisemitic_mask):
+        return {
+            "antisemitic": self._uppercase_word_count(df[antisemitic_mask]),
+            "non_antisemitic": self._uppercase_word_count(df[non_antisemitic_mask]),
+            "total": self._uppercase_word_count(df)
+        }
 
-    def find_the_number_of_words_in_uppercase(self ,df: pd.DataFrame):
-        number_of_words_in_uppercase = {}
-        total = 0
-        not_antisemitic_mask = df["Biased"] == 0
-        df = df[not_antisemitic_mask]
-        sum_of_uppercase =df["Text"].apply(lambda x:sum(1 for word in x.split() if word.isupper())).sum()
-        total +=sum_of_uppercase
-        number_of_words_in_uppercase ["nut_antisemitic"] = sum_of_uppercase
-
-
-        #count for antisemitic
-        antisemitic_mask = df["Biased"] == 1
-        df =df[antisemitic_mask]
-        sum_of_uppercase = df["Text"].apply(lambda x: sum(1 for word in x.split() if word.isupper())).sum()
-        number_of_words_in_uppercase["antisemitic"] = sum_of_uppercase
-        total += sum_of_uppercase
-
-        number_of_words_in_uppercase["total"] = total
-
-
-
-        return number_of_words_in_uppercase
-
+    def _uppercase_word_count(self, df: pd.DataFrame):
+        return int(df["Text"].apply(lambda x: sum(1 for word in str(x).split() if word.isupper())).sum())
 
 
 
