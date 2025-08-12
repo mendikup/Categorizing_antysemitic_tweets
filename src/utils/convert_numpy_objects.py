@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def convert_numpy_types(obj):
     """
     Converts a nested dictionary/list structure that may contain NumPy types
