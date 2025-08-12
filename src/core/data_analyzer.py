@@ -2,18 +2,24 @@ from collections import Counter
 
 import pandas as pd
 
+
 class DataAnalyzer:
+    """Basic stats over the cleaned tweets DataFrame.
+    Assumes columns 'Text' and 'Biased' (0/1)."""
 
     def analyze(self, df):
+        if not isinstance(df, pd.DataFrame):
+            raise ValueError("Expects a pandas DataFrame")
+
         antisemitic_mask = df["Biased"] == 1
         non_antisemitic_mask = df["Biased"] == 0
 
         statistics = {
             "total_tweets": self.count_tweets_per_category(df),
-            "average_words_in_tweet": self.average_words_per_tweet(df,antisemitic_mask, non_antisemitic_mask),
+            "average_words_in_tweet": self.average_words_per_tweet(df, antisemitic_mask, non_antisemitic_mask),
             "3 longest_tweets": self.find_3_longest_tweets(df, antisemitic_mask, non_antisemitic_mask),
             "common_words": self.find_most_common_words(df),
-            "uppercase_words": self.count_uppercase_words(df,antisemitic_mask, non_antisemitic_mask)
+            "uppercase_words": self.count_uppercase_words(df, antisemitic_mask, non_antisemitic_mask)
         }
 
         return statistics
@@ -32,7 +38,6 @@ class DataAnalyzer:
             "non_antisemitic": self._average_words(df[non_antisemitic_mask]),
             "total": self._average_words(df)
         }
-
 
     def _average_words(self, df: pd.DataFrame):
         return round(df["Text"].apply(lambda x: len(str(x).split())).mean() or 0, 2)
@@ -62,6 +67,3 @@ class DataAnalyzer:
 
     def _uppercase_word_count(self, df: pd.DataFrame):
         return int(df["Text"].apply(lambda x: sum(1 for word in str(x).split() if word.isupper())).sum())
-
-
-
